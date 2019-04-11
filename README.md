@@ -1,68 +1,66 @@
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+# React Redux Saga Tutorial for Beginners
 
-## Available Scripts
+> notes on [this](https://www.valentinog.com/blog/redux/) article
 
-In the project directory, you can run:
+- `react` is framework agnostic, `react-redux` is a small wrapper library for connecting Redux and React in an efficient way
+- try and move all business logic into maps and middleware
+- use redux thunk for async side effects
 
-### `npm start`
+# Redux-saga
 
-Runs the app in the development mode.<br>
-Open [http://localhost:3000](http://localhost:3000) to view it in the browser.
+- run async effects on a separate thread
+- saga used generators
 
-The page will reload if you make edits.<br>
-You will also see any lint errors in the console.
+## Generator functions
 
-### `npm test`
+- a generator function is a JavaSCript function which can be paused and resumed during its execution
+- generator functions have their own syntax
 
-Launches the test runner in the interactive watch mode.<br>
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+    function classicLoop() {
+        for (var i = 0; i < 15; i++) {
+            console.log(i)
+        }
+    }
+    
+    // turns into
+    
+    function* generatorLoop() {
+        for (var i = 0; i < 15; i++) {
+            yield console.log(i)
+        }
+    }
+    
+    // invoked by
+    
+    var myGenerator = generatorLoop()
+    myGenerator.next()
+    myGenerator.next()
+    myGenerator.next()
+    myGenerator.next()
 
-### `npm run build`
+- saga relies heavily on generator functions under the hood
+- saga implemented as middleware
+- take every action named FETCH_TODO_START and for each action of that type spin a worker saga
+- inside the worker saga call a function named getData
+- if the function does not result in any error then dispatch (put) a new action named FETCH_TODO_SUCCESS, alongside with a payload
 
-Builds the app for production to the `build` folder.<br>
-It correctly bundles React in production mode and optimizes the build for the best performance.
+    export default function* watcherSaga() {
+      yield takeEvery(FETCH_TODO_START, workerSaga);
+    }
+    
+    function* workerSaga() {
+      try {
+        const payload = yield call(getData);
+        yield put({ type: FETCH_TODO_SUCCESS, payload });
+      } catch (e) {
+        console.log(e);
+      }
+    }
+    
+    function getData() {
+      return axios
+        .get(`https://jsonplaceholder.typicode.com/todos/${getNextTodoId()}`)
+        .then(req => ({ content: req.data.title, id: getNextTodoId() }));
+    }
 
-The build is minified and the filenames include the hashes.<br>
-Your app is ready to be deployed!
-
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
-
-### `npm run eject`
-
-**Note: this is a one-way operation. Once you `eject`, you can’t go back!**
-
-If you aren’t satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
-
-Instead, it will copy all the configuration files and the transitive dependencies (Webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you’re on your own.
-
-You don’t have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn’t feel obligated to use this feature. However we understand that this tool wouldn’t be useful if you couldn’t customize it when you are ready for it.
-
-## Learn More
-
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
-
-To learn React, check out the [React documentation](https://reactjs.org/).
-
-### Code Splitting
-
-This section has moved here: https://facebook.github.io/create-react-app/docs/code-splitting
-
-### Analyzing the Bundle Size
-
-This section has moved here: https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size
-
-### Making a Progressive Web App
-
-This section has moved here: https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app
-
-### Advanced Configuration
-
-This section has moved here: https://facebook.github.io/create-react-app/docs/advanced-configuration
-
-### Deployment
-
-This section has moved here: https://facebook.github.io/create-react-app/docs/deployment
-
-### `npm run build` fails to minify
-
-This section has moved here: https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify
+- removes async calls from actions, helps for debugging, readability, reasoning and testing.
